@@ -16,5 +16,8 @@ pipenv install langchain langchain_community langchain_huggingface faiss-cpu pyp
 pipenv install huggingface_hub
 pipenv install streamlit
 
+\\ ALSO INSTALL PYAUDIO AND RELATED THINGS TO RUN VOICE SEARCH PART
+
+
 
 
