@@ -1,5 +1,6 @@
 import os
 import streamlit as st
+import speech_recognition as sr
 
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.chains import RetrievalQA
@@ -16,7 +17,7 @@ from langchain_huggingface import HuggingFaceEndpoint
 DB_FAISS_PATH="vectorstore/db_faiss"
 @st.cache_resource
 def get_vectorstore():
-    embedding_model=HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
+    embedding_model=HuggingFaceEmbeddings(model_name='sethuiyer/Medichat-Llama3-8B')
     db=FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
     return db
 
@@ -35,6 +36,22 @@ def load_llm(huggingface_repo_id, HF_TOKEN):
     )
     return llm
 
+def get_voice_input():
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        st.info("Listening... Please speak into the microphone.")
+        audio = recognizer.listen(source, phrase_time_limit=5)
+    try:
+        text = recognizer.recognize_google(audio)
+        st.success(f"You said: {text}")
+        return text
+    except sr.UnknownValueError:
+        st.error("Could not understand audio.")
+        return ""
+    except sr.RequestError:
+        st.error("Could not request results from Google Speech Recognition service.")
+        return ""
+
 
 def main():
     st.title("Ask Chatbot!")
@@ -45,7 +62,17 @@ def main():
     for message in st.session_state.messages:
         st.chat_message(message['role']).markdown(message['content'])
 
-    prompt=st.chat_input("Pass your prompt here")
+    # Add option for user to choose input type
+    input_mode = st.radio("Select input mode:", ["Text", "Voice"], horizontal=True)
+
+    if input_mode == "Text":
+        prompt = st.chat_input("Type your question here...")
+    else:
+        if st.button("🎤 Click to Speak"):
+            prompt = get_voice_input()
+        else:
+            prompt = None
+
 
     if prompt:
         st.chat_message('user').markdown(prompt)
